@@ -76,13 +76,14 @@ function getGitProviderLink(cb, fileFsPath, lines, pr) {
                         }
                     } else {
                         if (lines) {
-                            if (lines[0] == lines[1]) {
-                                cb(provider.webUrl(sha, subdir, lines[0]));
-                            } else {
-                                cb(provider.webUrl(sha, subdir, lines[0], lines[1]));
-                            }
+                            var line0 = lines[0][0];
+                            var col0 = lines[0][1];
+                        
+                            var line1 = lines[1][0];
+                            var col1 = lines[1][1];
+                            cb(provider.webUrl(sha, branch, subdir, line0, line1, col0, col1));
                         } else {
-                            cb(provider.webUrl(sha, subdir));
+                            cb(provider.webUrl(sha, branch, subdir));
                         }
                     }
                 });
@@ -159,10 +160,13 @@ function includeLines(editor) {
 
 function getSelectedLines(editor) {
     var anchorLineIndex = editor.selection.anchor.line + 1;
-    var activeLineIndex = editor.selection.active.line + 1;
+    var anchorColIndex = editor.selection.anchor.character + 1;
 
-    return [anchorLineIndex, activeLineIndex].sort(function (a, b) {
-        return a - b
+    var activeLineIndex = editor.selection.active.line + 1;
+    var activeColIndex = editor.selection.active.character + 1;
+
+    return [[anchorLineIndex, anchorColIndex] , [activeLineIndex, activeColIndex]].sort(function (a, b) {
+        return a[0] - b[0]
     });
 }
 

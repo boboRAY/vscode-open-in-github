@@ -25,7 +25,7 @@ class BaseProvider {
      * @param {number} endLine The last line in a multi-line selection
      * @return {string} The URL to be opened with the browser.
      */
-    webUrl(branch, filePath, line, endLine) {
+    webUrl(sha, branch, filePath, line, endLine) {
         return '';
     }
     prUrl(branch) {
@@ -34,8 +34,8 @@ class BaseProvider {
 }
 
 class GitHub extends BaseProvider {
-    webUrl(branch, filePath, line, endLine) {
-        let blob = branch;
+    webUrl(sha, branch, filePath, line, endLine) {
+        let blob = sha;
         if (useCommitSHAInURL) {
             blob = this.sha;
         }
@@ -44,19 +44,19 @@ class GitHub extends BaseProvider {
         }
         return `${this.baseUrl}/tree/${blob}`;
     }
-    prUrl(branch) {
-        return `${this.baseUrl}/pull/new/${branch}`;
+    prUrl(sha) {
+        return `${this.baseUrl}/pull/new/${sha}`;
     }
 }
 
 class GitLab extends BaseProvider {
-    webUrl(branch, filePath, line, endLine) {
+    webUrl(sha, branch, filePath, line, endLine) {
         if (filePath) {
-            return `${this.baseUrl}/blob/${branch}` + (filePath ? `${filePath}` : '') + (line ? `#L${line}` : '');
+            return `${this.baseUrl}/blob/${sha}` + (filePath ? `${filePath}` : '') + (line ? `#L${line}` : '');
         }
-        return `${this.baseUrl}/tree/${branch}`;
+        return `${this.baseUrl}/tree/${sha}`;
     }
-    prUrl(branch) {
+    prUrl(sha) {
         //https://docs.gitlab.com/ee/api/merge_requests.html#create-mr
         //`${this.baseUrl}/pull-requests/new?source_branch=${branch}&target_branch=${????}&title=${????}`
         throw new Error(`Doesn't support Merge Request from URL in GitLab yet`);
@@ -64,8 +64,8 @@ class GitLab extends BaseProvider {
 }
 
 class Gitea extends BaseProvider {
-    webUrl(branch, filePath, line, endLine) {
-        let blobPath = `branch/${branch}`;
+    webUrl(sha, branch, filePath, line, endLine) {
+        let blobPath = `branch/${sha}`;
         if (useCommitSHAInURL) {
             blobPath = `commit/${this.sha}`;
         }
@@ -74,19 +74,19 @@ class Gitea extends BaseProvider {
         }
         return `${this.baseUrl}/src/${blobPath}`;
     }
-    prUrl(branch) {
+    prUrl(sha) {
         throw new Error(`Doesn't support Merge Request from URL in Gitea yet`);
     }
 }
 
 class Bitbucket extends BaseProvider {
-    webUrl(branch, filePath, line, endLine) {
+    webUrl(sha, branch, filePath, line, endLine) {
         const fileName = path.basename(filePath)
         return `${this.baseUrl}/src/${this.sha}` + (filePath ? `${filePath}` : '') + (line ? `#${fileName}-${line}` : '');
     }
-    prUrl(branch) {
+    prUrl(sha) {
         const repo = this.baseUrl.replace(`${providerProtocol}://bitbucket.org/`, '')
-        return `${this.baseUrl}/pull-requests/new?source=${repo}%3A%3A${branch}&dest=${repo}%3A%3Aintegration`;
+        return `${this.baseUrl}/pull-requests/new?source=${repo}%3A%3A${sha}&dest=${repo}%3A%3Aintegration`;
         // looks like this:
         // https://bitbucket.org/${org/repo}/pull-requests/new?source=${org/repo}%3A%3A${branch}&dest=${org/repo}%3A%3A${destBranch}
     }
@@ -97,7 +97,7 @@ class VisualStudio extends BaseProvider {
         return `https://${this.gitUrl.resource}${this.gitUrl.pathname}`.replace(/\.git/, '');
     }
 
-    webUrl(branch, filePath, line, endLine) {
+    webUrl(sha, branch, filePath, line, endLine, col, endCol) {
         let query = {
             version: `GB${branch}`,
         };
@@ -106,6 +106,9 @@ class VisualStudio extends BaseProvider {
         }
         if (line) {
             query['line'] = line;
+            query['lineEnd'] = lineEnd;
+            query['lineStartColumn'] = lineStartColumn;
+            query['lineEndColumn'] = lineEndColumn;
         }
         return `${this.baseUrl}?${querystring.stringify(query)}`;
     }
@@ -125,7 +128,7 @@ class CustomProvider extends BaseProvider {
     get baseUrl() {
         return `${this.customProviderPath}${this.gitUrl.pathname}`.replace(/\.git/, '');
     }
-    webUrl(branch, filePath, line, endLine) {
+    webUrl(sha, branch, filePath, line, endLine) {
         if (filePath) {
             const lineURL = line ? `${this.customLinePrefix}${line}` : '';
             const branchPath = alwaysOpenInDefaultBranch ? defaultPrBranch : branch;
