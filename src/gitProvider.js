@@ -106,7 +106,7 @@ class VisualStudio extends BaseProvider {
         }
         if (line) {
             query['line'] = line;
-            query['lineEnd'] = lineEnd;
+            query['lineEnd'] = endLine;
             query['lineStartColumn'] = col;
             query['lineEndColumn'] = endCol;
         }
