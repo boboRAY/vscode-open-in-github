@@ -107,8 +107,8 @@ class VisualStudio extends BaseProvider {
         if (line) {
             query['line'] = line;
             query['lineEnd'] = lineEnd;
-            query['lineStartColumn'] = lineStartColumn;
-            query['lineEndColumn'] = lineEndColumn;
+            query['lineStartColumn'] = col;
+            query['lineEndColumn'] = endCol;
         }
         return `${this.baseUrl}?${querystring.stringify(query)}`;
     }
